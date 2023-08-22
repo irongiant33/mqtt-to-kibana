@@ -113,3 +113,4 @@ pip3 install -r requirements.txt
 - [ ] figure out mapping features:
    - https://www.elastic.co/guide/en/kibana/current/maps-getting-started.html
    - https://www.elastic.co/guide/en/elasticsearch/reference/current/geo-point.html
+   - Instead of "discover" go to "dashboard", create a new dashboard, then select the "maps" button that is 3 icons to the right of "create visualization"
