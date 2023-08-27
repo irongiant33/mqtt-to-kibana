@@ -1,10 +1,18 @@
 import paho.mqtt.client as mqtt
 from elasticsearch import Elasticsearch
+import json
 import ssl
 import re
+import data_processor
 
 mqtt_broker_address = "0.0.0.0"
-whisper_topic = "SDR/station_1/whisper"
+whisper_topic = "SDR/dev3/whisper"
+message_processing = {
+    "whisper_msg": [
+        data_processor.remove_strings_within_square_brackets,
+        data_processor.split_words_on_whitespace
+        ]
+}
 
 es_host = "localhost"
 es_port = 9200
@@ -22,7 +30,13 @@ def read_from_auth_file(auth_filename):
     return username, password
 
 def on_message(client, userdata, message):
-    payload = message.payload.decode('utf-8')
+    try:
+        payload = json.loads(message.payload.decode('utf-8'))
+    except json.JSONDecodeError:
+        return
+
+    if not isinstance(payload, (dict, list)):
+        return
     username, password = read_from_auth_file(".passwords")
     # push data to elasticsearch
     es = Elasticsearch(
@@ -34,16 +48,13 @@ def on_message(client, userdata, message):
         ca_certs=ca_cert_path,
     )
 
-    # remove all words within brackets & split the remaining text on all whitespace characters
-    filtered_text = re.sub(r'\[[^\[\]]*\]', '', payload)
-    words = re.split(r'\s+', filtered_text)
-    non_empty_words = [word for word in words if len(word) > 0]
+    for key in message_processing:
+        if key in payload:
+            for function in message_processing[key]:
+                payload[key] =function(payload[key])
 
-    print("Received message: ", non_empty_words)
-    data = {
-        "decoded-fm-words": words
-    }
-    es.index(index=es_index, body=data)
+    print(f'Received Payload:\n{json.dumps(payload, indent=4)}\n')
+    es.index(index=es_index, body=payload)
 
 client = mqtt.Client()
 client.on_connect = on_connect

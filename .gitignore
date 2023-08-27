@@ -1,2 +1,3 @@
 .passwords
 .venv
+**__pycache__

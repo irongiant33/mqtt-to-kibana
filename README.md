@@ -155,6 +155,50 @@ The specific use case that I have been able to get this to work with has been us
     - In the top right, you can enable more frequent auto refresh by clicking on the "auto refresh" button, enabling the switch for auto refresh, and then setting the frequency with which the word cloud will refresh.
     - Once you're back at the main dashboard view, you can edit the window of time in which the word cloud will have populated. By default it is the past 15 minutes. 
 
+## Modifying the Subscriber and Data Processor
+
+Most of the content you will need to edit within `subscriber.py` will be at the top of the file:
+
+```python
+mqtt_broker_address = "0.0.0.0"
+whisper_topic = "SDR/dev3/whisper"
+message_processing = {
+    "whisper_msg": [
+        data_processor.remove_strings_within_square_brackets,
+        data_processor.split_words_on_whitespace
+        ]
+}
+```
+
+The `mqtt_broker_address` should be changed to the IP where the MQTT broker is being hosted
+
+The `whisper_topic` should be changed to the name of the topic that you expect to receive messages from SDR4Space, or whatever topic is publishing MQTT messages
+
+The `message_processing` dictionary should be changed based on how you want to process fields within the MQTT messages you are receiving on the topic. This makes the assumption that MQTT is passing messages in JSON format. It discards all messages that are not in JSON format. For example, if you receive a MQTT message that looks like the following:
+
+```json
+{
+    "station": "dev3",
+    "date": "20230827-215830",
+    "whisper_msg": "[00:00:00.000 --> 00:00:03.060]   70. Tuesday, thunderstorm.                                                                                                                                 
+[00:00:03.060 --> 00:00:13.060]   [BLANK_AUDIO]",
+    "frequency": "162.550"
+}
+```
+
+The key of the `message_processing` dictionary defines the field you wish to edit. In the above case, it is "whisper_msg". The value is a list of processors you want to apply **in order**. You can add to `data_processing.py` to expand the processors you add. In the above case, we are removing all data between brackets and then splitting each word into a list of words. The output json that is sent to elastic looks as follows:
+
+```json
+{
+    "station": "dev3",
+    "date": "20230827-215830",
+    "whisper_msg": ["70.",
+                    "Tuesday",
+                    "thunderstorm"
+    ],
+    "frequency": "162.550"
+}
+```
 ## Todo
 
 - [ ] use [logstash](https://www.elastic.co/guide/en/logstash/current/first-event.html) (you can pull the [logstash docker](https://hub.docker.com/_/logstash) just as you did with kibana and elasticsearch) to parse data from `publisher.py` and ingest it into Kibana via Elastic. I spent a lot of time trying to figure out [filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-overview.html) but it didn't work.
