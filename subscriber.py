@@ -37,8 +37,9 @@ def on_message(client, userdata, message):
     # remove all words within brackets & split the remaining text on all whitespace characters
     filtered_text = re.sub(r'\[[^\[\]]*\]', '', payload)
     words = re.split(r'\s+', filtered_text)
+    non_empty_words = [word for word in words if len(word) > 0]
 
-    print("Received message: ", words)
+    print("Received message: ", non_empty_words)
     data = {
         "decoded-fm-words": words
     }
