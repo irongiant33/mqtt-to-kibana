@@ -108,7 +108,7 @@ pip3 install -r requirements.txt
 
 ## Word Cloud Visualization
 
-The specific use case that I have been able to get this to work with has been using [sdr4space DDC whisper](https://github.com/irongiant33/SDR4Space-Examples/tree/nbfm-edits/RX/DDC_whisper), but I will keep the instructions general for the production of a word cloud in Kibana.
+The specific use case that I have been able to get this to work with has been using [sdr4space "DDC_whisper" example](https://github.com/irongiant33/SDR4Space-Examples/tree/DragonOS/RX/DDC_whisper), but I will keep the instructions general for the production of a word cloud in Kibana.
 
 1. Follow the [basic setup](#basic-setup) guide to set up Elasticsearch and Kibana.
 2. Modify `subscriber.py` file to subscribe to the topic that contains words you wish to visualize. 
