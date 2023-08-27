@@ -1,10 +1,10 @@
 import paho.mqtt.client as mqtt
 from elasticsearch import Elasticsearch
 import ssl
+import re
 
 mqtt_broker_address = "0.0.0.0"
-mqtt_topic = "random_data_topic"
-geo_topic = "geo_topic"
+whisper_topic = "SDR/station_1/whisper"
 
 es_host = "localhost"
 es_port = 9200
@@ -14,8 +14,7 @@ es_ssl_context = {"ca_certs": ca_cert_path, "minimum_version": ssl.PROTOCOL_TLSv
 
 def on_connect(client, userdata, flags, rc):
     print("connected with result code " + str(rc))
-    client.subscribe(mqtt_topic)
-    client.subscribe(geo_topic)
+    client.subscribe(whisper_topic)
 
 def read_from_auth_file(auth_filename):
     with open(auth_filename) as fileobj:
@@ -24,8 +23,6 @@ def read_from_auth_file(auth_filename):
 
 def on_message(client, userdata, message):
     payload = message.payload.decode('utf-8')
-    print("Received message: ", payload)
-
     username, password = read_from_auth_file(".passwords")
     # push data to elasticsearch
     es = Elasticsearch(
@@ -36,10 +33,15 @@ def on_message(client, userdata, message):
         verify_certs=True,
         ca_certs=ca_cert_path,
     )
+
+    # remove all words within brackets & split the remaining text on all whitespace characters
+    filtered_text = re.sub(r'\[[^\[\]]*\]', '', payload)
+    words = re.split(r'\s+', filtered_text)
+
+    print("Received message: ", words)
     data = {
-            "message": payload,
-            f"{message.topic}": message.topic,
-            }
+        "decoded-fm-words": words
+    }
     es.index(index=es_index, body=data)
 
 client = mqtt.Client()
